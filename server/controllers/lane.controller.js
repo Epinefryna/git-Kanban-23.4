@@ -1,10 +1,13 @@
 import Lane from '../models/lane';
-import Note from '../models/note';
-
 import uuid from 'uuid';
+import Note from '../models/note'
+
+export function getSomething(req, res) {
+  return res.status(200).end();
+}
 
 export function addLane(req, res) {
-  if (!req.body.name) {
+  if(!req.body.name) {
     res.status(403).end();
   }
 
@@ -13,8 +16,9 @@ export function addLane(req, res) {
   newLane.notes = [];
 
   newLane.id = uuid();
+
   newLane.save((err, saved) => {
-    if (err) {
+    if(err) {
       res.status(500).send(err);
     }
     res.json(saved);
@@ -23,35 +27,65 @@ export function addLane(req, res) {
 
 export function getLanes(req, res) {
   Lane.find().exec((err, lanes) => {
-    if (err) {
+    if(err) {
       res.status(500).send(err);
     }
-    res.json({ lanes });
-  });
-}
-
-export function deleteLane(req, res) {
-  Lane.findOneAndRemove({ id: req.params.laneId }).exec((err, lane) => {
-    if (err) {
-      res.status(500).send(err);
-    }
-
-    lane.notes.map((noteId) => {
-      Note.findOneAndRemove({ _id: noteId }).exec((err) => {
-        if (err) {
-          res.status(500).send(err);
-        }
-        res.status(200).end();
-      });
-    });
-  });
+    res.json({lanes});
+  })
 }
 
 export function editLane(req, res) {
-  Lane.findOneAndUpdate({ id: req.params.laneId }, req.body, { new: true }, (err, lane) => {
-    if (err) {
+  const lane = req.body;
+  if(!lane.id ) {
+    res.status(403).end();
+  }
+  Lane.findOneAndUpdate({id: lane.id}, lane, {new: true}, (err, updated) => {
+    if(err) {
       res.status(500).send(err);
     }
-    res.json(lane);
+    res.json(updated);
+  })
+}
+
+
+//delete a lane wiht pre hook
+export function deleteLane(req, res) {
+  Lane.findOne({id: req.params.laneId}).exec( (err, lane) => {
+    if(err) {
+      res.status(500).send(err);
+    }
+    if(lane) {
+      lane.remove(() => {
+        res.status(200).send('Lane deleted succesfull');
+      });
+    } else {
+      res.status(500).send('Bad argument!');
+    }
   });
 }
+
+/**Delete a lane whitout pre hook */
+
+// export function deleteLane(req, res) {
+//   Lane.findOne({id: req.params.laneId}).exec( (err, lane) => {
+//     if(err) {
+//       res.status(500).send(err);
+//     }
+//     if(lane) {
+//       const notes = lane.notes;
+//       notes.forEach(element => {
+//         Note.findByIdAndRemove(element._id)
+//           .exec(err => {
+//             if(err) {
+//               res.status(500).send(err);
+//             }
+//           });
+//       });
+//       lane.remove(() => {
+//         res.status(200).send('Lane deleted succesfull');
+//       });
+//     } else {
+//       res.status(500).send('Bad argument!');
+//     }
+//   });
+// }
