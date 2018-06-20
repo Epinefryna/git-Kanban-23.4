@@ -56,3 +56,22 @@ export function updateNote(req, res) {
     });
   });
 }
+
+export function deleteNote(req, res) {
+  Lane.findOne({ id: req.params.laneId }, (err, foundLane) => {
+    if (err) {
+      res.status(500).send(err);
+    }
+
+    Note.findOne({ id: req.params.noteId }, (err, foundNote) => {
+      const index = foundLane.notes.findIndex(n => String(n) === String(foundNote._id));
+    
+      if (index >= 0) {
+        foundLane.notes.splice(index, 1);
+      }
+      
+      foundLane.save();
+      res.json(foundLane);
+    });
+  });    
+}
